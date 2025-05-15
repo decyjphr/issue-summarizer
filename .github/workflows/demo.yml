@@ -1,0 +1,52 @@
+name: Issue Summary Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Number of issues to summarize'
+        required: false
+        default: '10'
+      format:
+        description: 'Output format (markdown or json)'
+        required: false
+        default: 'markdown'
+        type: choice
+        options:
+          - markdown
+          - json
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Generate Issue Summary
+        id: summary
+        uses: ./
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          limit: ${{ github.event.inputs.limit }}
+          output-format: ${{ github.event.inputs.format }}
+
+      - name: Create Summary Issue
+        if: github.event.inputs.format == 'markdown'
+        uses: peter-evans/create-issue-from-file@v4
+        with:
+          title: 'Issue Summary Report'
+          content-filepath: ${{ steps.summary.outputs.summary }}
+          labels: |
+            report
+            automated
+
+      - name: Archive Summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: issue-summary
+          path: ${{ steps.summary.outputs.summary }}

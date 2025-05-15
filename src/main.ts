@@ -1,18 +1,72 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+import * as github from '@actions/github'
+import { ActionInputs, IssueSummary } from './types'
+import { getRecentIssues } from './github'
+import { summarizeIssue } from './github-models'
+import { formatAsMarkdown, formatAsJSON } from './formatter'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
+    const inputs: ActionInputs = {
+      token: core.getInput('token'),
+      repo: core.getInput('repo'),
+      limit: parseInt(core.getInput('limit'), 10),
+      model: core.getInput('model'),
+      outputFormat: core.getInput('output-format') as 'markdown' | 'json'
+    }
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    // Validate inputs
+    if (isNaN(inputs.limit) || inputs.limit <= 0) {
+      throw new Error('Invalid limit: must be a positive integer')
+    }
 
-    core.setOutput('time', new Date().toTimeString())
+    if (!inputs.token) {
+      throw new Error('GitHub token with models permission is required')
+    }
+
+    core.debug(`Fetching ${inputs.limit} recent issues from ${inputs.repo}...`)
+    const issues = await getRecentIssues(inputs.token, inputs.repo, inputs.limit)
+    
+    if (issues.length === 0) {
+      core.info('No issues found')
+      core.setOutput('summary', '')
+      return
+    }
+
+    core.info(`Found ${issues.length} issues. Generating summaries...`)
+    
+    // Process issues in parallel with a concurrency limit
+    const concurrencyLimit = 3
+    const summaries: IssueSummary[] = []
+    
+    // Process issues in batches to respect concurrency limit
+    for (let i = 0; i < issues.length; i += concurrencyLimit) {
+      const batch = issues.slice(i, i + concurrencyLimit)
+      const batchPromises = batch.map(issue => {
+        core.debug(`Summarizing issue #${issue.number}: ${issue.title}`)
+        return summarizeIssue(issue, inputs.token, inputs.model)
+      })
+      
+      const batchResults = await Promise.all(batchPromises)
+      summaries.push(...batchResults)
+    }
+    
+    // Format the summaries based on the requested output format
+    let output: string
+    if (inputs.outputFormat === 'json') {
+      output = formatAsJSON(summaries)
+    } else {
+      output = formatAsMarkdown(summaries)
+    }
+    
+    core.info('Issue summaries generated successfully')
+    core.setOutput('summary', output)
   } catch (error) {
-    core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    } else {
+      core.setFailed('An unknown error occurred')
+    }
   }
 }
 

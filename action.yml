@@ -1,11 +1,30 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Issue Summarizer'
+description: 'Summarizes recent issues in a GitHub repository using GitHub Models API (GPT-4o)'
+author: 'ActionsDesk'
 inputs:
-  milliseconds: # change this
+  token:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'GitHub token with repository read access and models permission'
+    default: ${{ github.token }}
+  repo:
+    required: false
+    description: 'Repository name (e.g., "owner/repo"). Defaults to the current repository.'
+    default: ${{ github.repository }}
+  limit:
+    required: false
+    description: 'Number of recent issues to summarize'
+    default: '10'
+  model:
+    required: false
+    description: 'GitHub Model to use for summarization'
+    default: 'openai/gpt-4o'
+  output-format:
+    required: false
+    description: 'Format of the output summary (markdown or json)'
+    default: 'markdown'
+outputs:
+  summary:
+    description: 'The summary of the issues'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
