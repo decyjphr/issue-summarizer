@@ -1,0 +1,270 @@
+name: Issue Summary Generator
+
+# This workflow generates summaries of issues when triggered by a comment containing '/summary'
+# Users can add specific instructions after '/summary', e.g., '/summary focus on performance issues'
+#
+# Known issues:
+# =============
+# - There is a limit of 8000 tokens that can be passed to the models. This workflow will fail for issues with very long histories
+
+on:
+  issue_comment:
+    types: [created]
+
+# Required permissions for the workflow
+permissions:
+  issues: write   # For reading issue data and posting comments
+  models: read    # For accessing GitHub's AI models
+  contents: read  # For repository access
+
+jobs:
+  generate-summary:
+    runs-on: ubuntu-latest
+    # Only run when a comment starts with '/summary'
+    if: ${{ startsWith(github.event.comment.body, '/summary') }}
+    
+    steps:
+      # Step 1: Check if debug mode is enabled
+      # This enables artifact uploads for troubleshooting
+      - name: Check debug mode
+        id: check-debug
+        run: |
+          if [ "${{ secrets.ACTIONS_STEP_DEBUG }}" == "true" ] || [ "${{ vars.ACTIONS_STEP_DEBUG }}" == "true" ]; then
+            echo "debug_enabled=true" >> $GITHUB_OUTPUT
+            echo "Debug mode enabled - artifacts will be uploaded"
+          else
+            echo "debug_enabled=false" >> $GITHUB_OUTPUT
+            echo "Debug mode disabled - artifacts will not be uploaded"
+          fi
+      
+      # Step 2: Add a reaction to show the request is being processed
+      - name: Add reaction to indicate processing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Add rocket reaction to indicate processing
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+        
+      # Step 3: Gather all issue data and extract additional instructions
+      - name: Fetch issue data
+        id: issue-data
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+            
+            // Get issue details
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+            
+            // Get all comments
+            // CUSTOMIZATION: You can filter comments by date or other criteria if needed
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+            
+            // Format the comments 
+            // CUSTOMIZATION: You can modify this format to change how comments appear in the summary
+            const commentsText = comments.map(comment => {
+              return `Comment by ${comment.user.login} at ${comment.created_at}:\n${comment.body}`;
+            }).join('\n\n---\n\n');
+            
+            // Combine issue body and comments into input for model
+            const issueData = {
+              title: issue.data.title,
+              body: issue.data.body || '(No description provided)',
+              comments: commentsText
+            };
+            
+            // Write the data to a file
+            const fs = require('fs');
+            fs.writeFileSync('issue_data.txt', 
+              `Issue Title: ${issueData.title}\n\n` +
+              `Issue Description:\n${issueData.body}\n\n` +
+              `Comments:\n${issueData.comments}`
+            );
+            
+            // Store the issue number for later use
+            core.setOutput('issue-number', issueNumber);
+            
+            // Extract additional instructions from comment
+            // This gets any text after '/summary' to pass as additional instructions to the model
+            const triggerComment = context.payload.comment.body;
+            let additionalInstructions = '';
+            
+            if (triggerComment.trim() !== '/summary') {
+              // Extract everything after '/summary'
+              additionalInstructions = triggerComment.substring(triggerComment.indexOf('/summary') + 8).trim();
+              console.log(`Found additional instructions: ${additionalInstructions}`);
+            }
+            
+            // Save additional instructions for the prompt
+            core.setOutput('additional-instructions', additionalInstructions);
+      
+      # Step 4: Upload issue data for debugging if debug mode is enabled
+      - name: Upload issue data as artifact
+        if: steps.check-debug.outputs.debug_enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-data
+          path: issue_data.txt
+          retention-days: 1
+      
+      # Step 5: Generate the summary using the AI model
+      - name: Generate summary
+        id: generate-summary
+        run: |
+          # Read the issue content
+          ISSUE_CONTENT=$(cat issue_data.txt)
+          
+          # Get any additional instructions from the comment
+          ADDITIONAL_INSTRUCTIONS="${{ steps.issue-data.outputs.additional-instructions }}"
+
+          # =====================================================================
+          # CUSTOMIZATION POINT: Modify the prompt to change the summary format
+          # =====================================================================
+          # The prompt below is used to generate the summary.
+          # You can modify the instructions, format, or structure as needed.
+          # The placeholders like <PLACEHOLDER: output expectation> will be replaced by the AI.
+          # =====================================================================
+
+          cat > system_prompt.txt << EOT
+          You are a GitHub issue summarizer referred to as SYSTEM.
+          Your task is to summarize GitHub issues and their comments for software engineers to review.
+          You will be provided with the content of a GitHub issue and its comments.
+          Use all relevant URLs and links in the issue and comments.
+          Always reference the users based on their GitHub usernames.
+          You should not alter the facts.
+          If you are provided with system instructions !!SYSTEM INSTRUCTIONS!!: <text>, you should follow them while generating the summary.
+          Your goal is to generate a comprehensive summary that includes the following sections:
+
+          Replace all the placeholders like <PLACEHOLDER: output expectation> with your generated data:
+
+          Make sure to include the following comment in all summaries generated and ignore all the comments that have the following comment:
+          <!-- IGNORE THIS SUMMARY IN FUTURE PROMPTS -->
+
+          Make sure to include this warning in all summaries generated:
+          > [!IMPORTANT]
+          > Copilot generated issue summary. Might contain invalid information.
+
+          ## Summary
+          <PLACEHOLDER: an executive summary of the issue, and the outcomes of the investigations so far>
+
+          ### Investigation details
+          <PLACEHOLDER: a breakdown of all the investigation steps taken so far, include the users who conducted the investigations (comment authors), and the outcome of each. Use bulleted lists of necessary>
+
+          ## Next steps
+          <PLACEHOLDER: outcomes of the investigations and next steps needed to move the investigation forward or wrap up the work> 
+          EOT
+
+          cat > prompt_content.txt << EOT
+          $ISSUE_CONTENT
+          EOT
+
+          # Append additional instructions if provided in the comment
+          # This allows users to customize the summary by adding text after '/summary'
+          if [ ! -z "$ADDITIONAL_INSTRUCTIONS" ]; then
+              echo -e "\n!!SYSTEM INSTRUCTIONS!!: $ADDITIONAL_INSTRUCTIONS" >> prompt_content.txt
+          fi
+
+          # Properly escape the content for JSON
+          SYSTEM_PROMPT="$(jq -Rs . system_prompt.txt)"
+          SANITIZED_PROMPT="$(jq -Rs . prompt_content.txt)"
+
+          # =====================================================================
+          # CUSTOMIZATION POINT: Model selection and parameters
+          # =====================================================================
+          # You can change the model or add parameters like temperature, max_tokens, etc.
+          # Available models include: openai/gpt-4o, openai/gpt-4-turbo, etc.
+          # =====================================================================
+
+          cat > model_input.json << EOF
+          {
+          "messages": [
+              {
+                  "role": "system",
+                  "content": $SYSTEM_PROMPT
+              },
+              {
+                  "role": "user",
+                  "content": $SANITIZED_PROMPT
+              }
+          ],
+          "model": "openai/gpt-4o"
+          }
+          EOF
+          
+          # Call the GitHub Models API
+          SUMMARY=$(curl -s "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d @model_input.json)
+          
+          # Check for errors in the API response
+          if echo "$SUMMARY" | jq -e '.error' > /dev/null; then
+            echo "API Error: $(echo "$SUMMARY" | jq -r '.error.message')"
+            echo "$SUMMARY" | jq -r .
+            exit 1
+          fi
+          
+          # Extract the content from the response
+          CONTENT=$(echo "$SUMMARY" | jq -r '.choices[0].message.content')
+          
+          # Save the response to file for artifact upload
+          echo "$CONTENT" > model_response.md
+          
+          # Save the content to an output variable, escaping newlines for GitHub Actions
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      # Step 6: Upload model response for debugging if debug mode is enabled
+      - name: Upload model response as artifact
+        if: steps.check-debug.outputs.debug_enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-response
+          path: model_response.md
+          retention-days: 1
+
+      # Step 7: Post the generated summary as a comment on the issue
+      - name: Post summary as comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `${process.env.SUMMARY}`;
+
+            // CUSTOMIZATION: You can add additional processing to the summary here if needed
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue-data.outputs.issue-number }},
+              body: summary
+            });
+        env:
+          SUMMARY: ${{ steps.generate-summary.outputs.summary }}
+          
+      # Step 8: Handle failure cases by adding a reaction
+      - name: Add failure reaction if job fails
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Add -1 reaction to indicate failure
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: '-1'
+            });
