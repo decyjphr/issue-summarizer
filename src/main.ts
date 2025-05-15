@@ -60,6 +60,7 @@ async function run(): Promise<void> {
     }
     
     core.info('Issue summaries generated successfully')
+    core.info(JSON.stringify(summaries, null, 2))
     core.setOutput('summary', output)
   } catch (error) {
     if (error instanceof Error) {

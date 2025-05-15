@@ -304,6 +304,7 @@ function run() {
                 output = (0, formatter_1.formatAsMarkdown)(summaries);
             }
             core.info('Issue summaries generated successfully');
+            core.info(JSON.stringify(summaries, null, 2));
             core.setOutput('summary', output);
         }
         catch (error) {
