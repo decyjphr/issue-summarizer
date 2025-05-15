@@ -46,7 +46,7 @@ jobs:
             automated
 
       - name: Archive Summary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: issue-summary
           path: ${{ steps.summary.outputs.summary }}
