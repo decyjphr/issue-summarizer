@@ -15,6 +15,8 @@ on:
         options:
           - markdown
           - json
+permissions:
+  models: read
 
 jobs:
   summarize:
