@@ -29,22 +29,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Call AI model
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl "https://models.github.ai/inference/chat/completions" \
-             -H "Content-Type: application/json" \
-             -H "Authorization: Bearer $GITHUB_TOKEN" \
-             -d '{
-              "messages": [
-                  {
-                     "role": "user",
-                     "content": "Explain the concept of recursion."
-                  }
-               ],
-               "model": "openai/gpt-4o"
-            }'
       - name: Generate Issue Summary
         id: summary
         uses: ./
