@@ -62,18 +62,32 @@ function summarizeIssue(issue, token, model = 'openai/gpt-4o') {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const systemPrompt = `
-    You are a helpful assistant that summarizes GitHub issues.
-    Extract the following information from the GitHub issue:
-    1. A concise summary (2-3 sentences)
-    2. A list of pending items or action points (if any)
-    
+    You are a GitHub issue summarizer referred to as SYSTEM.
+    Your task is to summarize GitHub issues and their comments for software engineers to review.
+    You will be provided with the content of a GitHub issue and its comments.
+    Use all relevant URLs and links in the issue and comments.
+    Always reference the users based on their GitHub usernames.
+    You should not alter the facts.
+    If you are provided with system instructions !!SYSTEM INSTRUCTIONS!!: <text>, you should follow them while generating the summary.
+    Your goal is to generate a comprehensive summary in JSON format.
     Format your response as JSON with the following fields:
     {
-      "summary": "The summary text",
+      "summary": "<PLACEHOLDER: an executive summary of the issue, and the outcomes of the investigations so far>",
+      "investigationDetails": "<PLACEHOLDER: a breakdown of all the investigation steps taken so far, include the users who conducted the investigations (comment authors), and the outcome of each. Use bulleted lists of necessary>",
+      "nextSteps": "<PLACEHOLDER: outcomes of the investigations and next steps needed to move the investigation forward or wrap up the work>",
       "pendingItems": ["item1", "item2", ...]
     }
     
     If there are no pending items, return an empty array.
+    Replace all the placeholders like <PLACEHOLDER: output expectation> with your generated data:
+
+    Make sure to include the following comment in all summaries generated and ignore all the comments that have the following comment:
+    <!-- IGNORE THIS SUMMARY IN FUTURE PROMPTS -->
+
+    Make sure to include this warning in all summaries generated:
+    > [!IMPORTANT]
+    > Copilot generated issue summary. Might contain invalid information.
+
   `;
         const issueContent = `
     Title: ${issue.title}
