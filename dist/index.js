@@ -2,13 +2,38 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 57556:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.formatAsJSON = exports.formatAsMarkdown = void 0;
+exports.writeToFile = exports.formatAsJSON = exports.formatAsMarkdown = void 0;
 const date_fns_1 = __nccwpck_require__(73314);
+const fs = __importStar(__nccwpck_require__(57147));
+const path = __importStar(__nccwpck_require__(71017));
 function formatAsMarkdown(summaries) {
     let markdown = '# Issue Summary Report\n\n';
     markdown += `Generated on: ${(0, date_fns_1.format)(new Date(), 'PPP')}\n\n`;
@@ -38,6 +63,31 @@ function formatAsJSON(summaries) {
     }, null, 2);
 }
 exports.formatAsJSON = formatAsJSON;
+/**
+ * Writes the formatted content to a file and returns the file path
+ * @param content The formatted content to write
+ * @param format The format of the content ('markdown' or 'json')
+ * @returns The path to the created file
+ */
+function writeToFile(content, format) {
+    // Create the output directory in the GitHub workspace or current directory
+    const workspaceDir = process.env.GITHUB_WORKSPACE || process.cwd();
+    const outputDir = path.join(workspaceDir, 'issue-summary-output');
+    // Create output directory if it doesn't exist
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+    }
+    // Generate a unique filename with timestamp
+    const timestamp = Date.now();
+    const extension = format === 'json' ? 'json' : 'md';
+    const fileName = `issue-summary-${timestamp}.${extension}`;
+    const filePath = path.join(outputDir, fileName);
+    // Write the content to the file
+    fs.writeFileSync(filePath, content);
+    console.log(`Summary written to file: ${filePath}`);
+    return filePath;
+}
+exports.writeToFile = writeToFile;
 //# sourceMappingURL=formatter.js.map
 
 /***/ }),
@@ -303,9 +353,12 @@ function run() {
             else {
                 output = (0, formatter_1.formatAsMarkdown)(summaries);
             }
+            // Write the content to a file and get the file path
+            const outputFilePath = (0, formatter_1.writeToFile)(output, inputs.outputFormat);
             core.info('Issue summaries generated successfully');
-            core.info(JSON.stringify(summaries, null, 2));
-            core.setOutput('summary', output);
+            // Set both the content and the file path as outputs
+            core.setOutput('summary-content', output);
+            core.setOutput('summary', outputFilePath);
         }
         catch (error) {
             if (error instanceof Error) {

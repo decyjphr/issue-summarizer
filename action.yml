@@ -24,7 +24,9 @@ inputs:
     default: 'markdown'
 outputs:
   summary:
-    description: 'The summary of the issues'
+    description: 'File path to the saved summary file'
+  summary-content:
+    description: 'The content of the summary'
 runs:
   using: 'node16'
   main: 'dist/index.js'

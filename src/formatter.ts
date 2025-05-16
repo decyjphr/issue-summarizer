@@ -1,5 +1,7 @@
 import { IssueSummary } from './types'
 import { format } from 'date-fns'
+import * as fs from 'fs'
+import * as path from 'path'
 
 export function formatAsMarkdown(summaries: IssueSummary[]): string {
   let markdown = '# Issue Summary Report\n\n'
@@ -37,4 +39,34 @@ export function formatAsJSON(summaries: IssueSummary[]): string {
     null,
     2
   )
+}
+
+/**
+ * Writes the formatted content to a file and returns the file path
+ * @param content The formatted content to write
+ * @param format The format of the content ('markdown' or 'json')
+ * @returns The path to the created file
+ */
+export function writeToFile(content: string, format: string): string {
+  // Create the output directory in the GitHub workspace or current directory
+  const workspaceDir = process.env.GITHUB_WORKSPACE || process.cwd();
+  const outputDir = path.join(workspaceDir, 'issue-summary-output');
+  
+  // Create output directory if it doesn't exist
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  
+  // Generate a unique filename with timestamp
+  const timestamp = Date.now();
+  const extension = format === 'json' ? 'json' : 'md';
+  const fileName = `issue-summary-${timestamp}.${extension}`;
+  const filePath = path.join(outputDir, fileName);
+  
+  // Write the content to the file
+  fs.writeFileSync(filePath, content);
+  
+  console.log(`Summary written to file: ${filePath}`);
+  
+  return filePath;
 }

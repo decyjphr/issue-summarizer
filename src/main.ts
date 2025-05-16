@@ -3,7 +3,7 @@ import * as github from '@actions/github'
 import { ActionInputs, IssueSummary } from './types'
 import { getRecentIssues } from './github'
 import { summarizeIssue } from './github-models'
-import { formatAsMarkdown, formatAsJSON } from './formatter'
+import { formatAsMarkdown, formatAsJSON, writeToFile } from './formatter'
 
 async function run(): Promise<void> {
   try {
@@ -59,9 +59,14 @@ async function run(): Promise<void> {
       output = formatAsMarkdown(summaries)
     }
     
+    // Write the content to a file and get the file path
+    const outputFilePath = writeToFile(output, inputs.outputFormat)
+    
     core.info('Issue summaries generated successfully')
-    core.info(JSON.stringify(summaries, null, 2))
-    core.setOutput('summary', output)
+    
+    // Set both the content and the file path as outputs
+    core.setOutput('summary-content', output)
+    core.setOutput('summary', outputFilePath)
   } catch (error) {
     if (error instanceof Error) {
       core.setFailed(error.message)
