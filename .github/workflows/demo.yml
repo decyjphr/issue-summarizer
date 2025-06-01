@@ -22,7 +22,7 @@ jobs:
   summarize:
     runs-on: ubuntu-latest
     permissions:
-      issues: read
+      issues: write
       contents: read
       id-token: write
       models: read
