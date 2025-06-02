@@ -22,10 +22,6 @@ export async function summarizeIssue(
       "nextSteps": "<PLACEHOLDER: outcomes of the investigations and next steps needed to move the investigation forward or wrap up the work>",
       "pendingItems": ["item1", "item2", ...]
     }
-    
-    Make sure to include this warning in the summary generated:
-    > [!IMPORTANT]
-    > Copilot generated issue summary. Might contain invalid information.
 
     If there are no pending items, return an empty array.
 

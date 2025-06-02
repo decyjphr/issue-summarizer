@@ -37,6 +37,7 @@ const path = __importStar(__nccwpck_require__(71017));
 function formatAsMarkdown(summaries) {
     let markdown = '# Issue Summary Report\n\n';
     markdown += `Generated on: ${(0, date_fns_1.format)(new Date(), 'PPP')}\n\n`;
+    markdown += '> [!IMPORTANT]\n> Copilot generated issue summary. Might contain invalid information.\n\n';
     for (const summary of summaries) {
         markdown += `## [#${summary.number}: ${summary.title}](${summary.url})\n\n`;
         markdown += `- **Owner**: ${summary.owner}\n`;
@@ -60,6 +61,7 @@ function formatAsMarkdown(summaries) {
 exports.formatAsMarkdown = formatAsMarkdown;
 function formatAsJSON(summaries) {
     return JSON.stringify({
+        warning: "Copilot generated issue summary. Might contain invalid information.",
         generated: (0, date_fns_1.format)(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss'),
         issues: summaries
     }, null, 2);
@@ -129,10 +131,6 @@ function summarizeIssue(issue, token, model = 'openai/gpt-4o') {
       "nextSteps": "<PLACEHOLDER: outcomes of the investigations and next steps needed to move the investigation forward or wrap up the work>",
       "pendingItems": ["item1", "item2", ...]
     }
-    
-    Make sure to include this warning in the summary generated:
-    > [!IMPORTANT]
-    > Copilot generated issue summary. Might contain invalid information.
 
     If there are no pending items, return an empty array.
 
