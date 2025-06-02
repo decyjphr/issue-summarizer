@@ -6,6 +6,7 @@ import * as path from 'path'
 export function formatAsMarkdown(summaries: IssueSummary[]): string {
   let markdown = '# Issue Summary Report\n\n'
   markdown += `Generated on: ${format(new Date(), 'PPP')}\n\n`
+  markdown += '> [!IMPORTANT]\n> Copilot generated issue summary. Might contain invalid information.\n\n'
   
   for (const summary of summaries) {
     markdown += `## [#${summary.number}: ${summary.title}](${summary.url})\n\n`
@@ -37,6 +38,7 @@ export function formatAsMarkdown(summaries: IssueSummary[]): string {
 export function formatAsJSON(summaries: IssueSummary[]): string {
   return JSON.stringify(
     {
+      warning: "Copilot generated issue summary. Might contain invalid information.",
       generated: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss'),
       issues: summaries
     },
