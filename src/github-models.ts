@@ -23,16 +23,16 @@ export async function summarizeIssue(
       "pendingItems": ["item1", "item2", ...]
     }
     
+    Make sure to include this warning in the summary generated:
+    > [!IMPORTANT]
+    > Copilot generated issue summary. Might contain invalid information.
+
     If there are no pending items, return an empty array.
+
     Replace all the placeholders like <PLACEHOLDER: output expectation> with your generated data:
 
     Make sure to include the following comment in all summaries generated and ignore all the comments that have the following comment:
     <!-- IGNORE THIS SUMMARY IN FUTURE PROMPTS -->
-
-    Make sure to include this warning in all summaries generated:
-    > [!IMPORTANT]
-    > Copilot generated issue summary. Might contain invalid information.
-
   `
   
   const issueContent = `
@@ -78,6 +78,8 @@ export async function summarizeIssue(
       status: issue.state,
       description: issue.body || 'No description provided',
       summary: parsedContent.summary || 'No summary generated',
+      investigationDetails: parsedContent.investigationDetails || 'No investigation details provided',
+      nextSteps: parsedContent.nextSteps || 'No next steps provided',
       pendingItems: parsedContent.pendingItems || [],
       updatedAt: issue.updated_at
     }

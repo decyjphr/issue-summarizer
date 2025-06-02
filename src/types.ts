@@ -26,6 +26,8 @@ export interface IssueSummary {
   status: string
   description: string
   summary: string
+  investigationDetails?: string // Optional field for additional investigation details
+  nextSteps?: string // Optional field for next steps
   pendingItems: string[]
   updatedAt: string
 }

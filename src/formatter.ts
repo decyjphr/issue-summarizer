@@ -15,7 +15,11 @@ export function formatAsMarkdown(summaries: IssueSummary[]): string {
     markdown += `- **Last Updated**: ${format(new Date(summary.updatedAt), 'PPP')}\n\n`
     
     markdown += `### Summary\n\n${summary.summary}\n\n`
-    
+
+    markdown += `### Investigation Details\n\n${summary.investigationDetails}\n\n`
+
+    markdown += `### Next Steps\n\n${summary.nextSteps}\n\n`
+
     if (summary.pendingItems && summary.pendingItems.length > 0) {
       markdown += '### Pending Items\n\n'
       for (const item of summary.pendingItems) {
