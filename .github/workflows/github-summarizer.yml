@@ -20,7 +20,7 @@ jobs:
   generate-summary:
     runs-on: ubuntu-latest
     # Only run when a comment starts with '/summary'
-    if: ${{ startsWith(github.event.comment.body, '/summary') }}
+    if: ${{ startsWith(github.event.comment.body, '/ghsummary') }}
 
     steps:
       # Step 1: Check if debug mode is enabled
