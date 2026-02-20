@@ -1,8 +1,8 @@
 // filepath: /Users/decyjphr/projects/actions/issue-summarizer/src/github-models.ts
-import { GitHubIssue, IssueSummary } from './types'
+import {GitHubIssue, IssueSummary} from './types'
 
 export async function summarizeIssue(
-  issue: GitHubIssue, 
+  issue: GitHubIssue,
   token: string,
   model: string = 'gpt-4o'
 ): Promise<IssueSummary> {
@@ -30,37 +30,37 @@ export async function summarizeIssue(
     Make sure to include the following comment in all summaries generated and ignore all the comments that have the following comment:
     <!-- IGNORE THIS SUMMARY IN FUTURE PROMPTS -->
   `
-  
+
   const issueContent = `
     Title: ${issue.title}
     Description: ${issue.body || 'No description provided'}
     State: ${issue.state}
     Labels: ${issue.labels.map(label => label.name).join(', ')}
   `
-  
+
   try {
     const response = await fetch('https://api.githubcopilot.com/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Copilot-Integration-Id': 'vscode-chat'
       },
       body: JSON.stringify({
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: issueContent }
+          {role: 'system', content: systemPrompt},
+          {role: 'user', content: issueContent}
         ],
         model: model,
-        response_format: { type: 'json_object' }
+        response_format: {type: 'json_object'}
       })
     })
-    
+
     // Check if the response was successful
     if (!response.ok) {
       throw new Error(`GitHub Copilot API responded with status: ${response.status}`)
     }
-    
+
     // Parse the JSON response
     const responseData = await response.json()
     const content = responseData.choices[0]?.message?.content || '{}'

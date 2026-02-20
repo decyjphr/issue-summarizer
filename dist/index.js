@@ -61,8 +61,8 @@ function formatAsMarkdown(summaries) {
 exports.formatAsMarkdown = formatAsMarkdown;
 function formatAsJSON(summaries) {
     return JSON.stringify({
-        warning: "Copilot generated issue summary. Might contain invalid information.",
-        generated: (0, date_fns_1.format)(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss'),
+        warning: 'Copilot generated issue summary. Might contain invalid information.',
+        generated: (0, date_fns_1.format)(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
         issues: summaries
     }, null, 2);
 }
@@ -112,7 +112,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.summarizeIssue = void 0;
-function summarizeIssue(issue, token, model = 'openai/gpt-4o') {
+function summarizeIssue(issue, token, model = 'gpt-4o') {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const systemPrompt = `
@@ -146,11 +146,12 @@ function summarizeIssue(issue, token, model = 'openai/gpt-4o') {
     Labels: ${issue.labels.map(label => label.name).join(', ')}
   `;
         try {
-            const response = yield fetch('https://models.github.ai/inference/chat/completions', {
+            const response = yield fetch('https://api.githubcopilot.com/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    'Copilot-Integration-Id': 'vscode-chat'
                 },
                 body: JSON.stringify({
                     messages: [
@@ -163,7 +164,7 @@ function summarizeIssue(issue, token, model = 'openai/gpt-4o') {
             });
             // Check if the response was successful
             if (!response.ok) {
-                throw new Error(`GitHub Models API responded with status: ${response.status}`);
+                throw new Error(`GitHub Copilot API responded with status: ${response.status}`);
             }
             // Parse the JSON response
             const responseData = yield response.json();

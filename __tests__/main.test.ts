@@ -1,9 +1,9 @@
 import * as process from 'process'
 import * as cp from 'child_process'
 import * as path from 'path'
-import { formatAsMarkdown, formatAsJSON } from '../src/formatter'
-import { IssueSummary, GitHubIssue } from '../src/types'
-import { summarizeIssue } from '../src/github-models'
+import {formatAsMarkdown, formatAsJSON} from '../src/formatter'
+import {IssueSummary, GitHubIssue} from '../src/types'
+import {summarizeIssue} from '../src/github-models'
 
 // Mock issue summary data for testing
 const mockIssueSummaries: IssueSummary[] = [
@@ -35,7 +35,7 @@ const mockIssueSummaries: IssueSummary[] = [
 
 test('formatAsMarkdown generates correct output', () => {
   const markdown = formatAsMarkdown(mockIssueSummaries)
-  
+
   // Basic checks
   expect(markdown).toContain('# Issue Summary Report')
   expect(markdown).toContain('## [#1: Test Issue 1]')
@@ -43,7 +43,7 @@ test('formatAsMarkdown generates correct output', () => {
   expect(markdown).toContain('**Assignees**: dev1, dev2')
   expect(markdown).toContain('### Pending Items')
   expect(markdown).toContain('- Fix bug')
-  
+
   // Check for second issue
   expect(markdown).toContain('## [#2: Test Issue 2]')
   expect(markdown).toContain('**Assignees**: None')
@@ -52,7 +52,7 @@ test('formatAsMarkdown generates correct output', () => {
 test('formatAsJSON generates valid JSON', () => {
   const json = formatAsJSON(mockIssueSummaries)
   const parsed = JSON.parse(json)
-  
+
   expect(parsed).toHaveProperty('generated')
   expect(parsed).toHaveProperty('issues')
   expect(parsed.issues).toHaveLength(2)
@@ -67,7 +67,7 @@ test('summarizeIssue uses GitHub Copilot API endpoint', async () => {
     body: 'Test body',
     state: 'open',
     html_url: 'https://github.com/test/repo/issues/42',
-    user: { login: 'testuser' },
+    user: {login: 'testuser'},
     assignees: [],
     labels: [],
     created_at: '2024-01-01T00:00:00Z',
@@ -79,9 +79,10 @@ test('summarizeIssue uses GitHub Copilot API endpoint', async () => {
     fetchedUrls.push(url)
     return Promise.resolve({
       ok: true,
-      json: () => Promise.resolve({
-        choices: [{ message: { content: JSON.stringify({ summary: 'Test', pendingItems: [] }) } }]
-      })
+      json: () =>
+        Promise.resolve({
+          choices: [{message: {content: JSON.stringify({summary: 'Test', pendingItems: []})}}]
+        })
     })
   }) as jest.Mock
 
@@ -100,13 +101,13 @@ test('test runs', () => {
   process.env['INPUT_LIMIT'] = '5'
   process.env['INPUT_API-KEY'] = 'test-api-key'
   process.env['INPUT_OUTPUT-FORMAT'] = 'markdown'
-  
+
   const np = process.execPath
   const ip = path.join(__dirname, '..', 'lib', 'main.js')
   const options: cp.ExecFileSyncOptions = {
     env: process.env
   }
-  
+
   // This will throw if the process exits with an error
   try {
     cp.execFileSync(np, [ip], options)

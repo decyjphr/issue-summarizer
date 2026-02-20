@@ -1,9 +1,9 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { ActionInputs, IssueSummary } from './types'
-import { getRecentIssues } from './github'
-import { summarizeIssue } from './github-models'
-import { formatAsMarkdown, formatAsJSON, writeToFile } from './formatter'
+import {ActionInputs, IssueSummary} from './types'
+import {getRecentIssues} from './github'
+import {summarizeIssue} from './github-models'
+import {formatAsMarkdown, formatAsJSON, writeToFile} from './formatter'
 
 async function run(): Promise<void> {
   try {
@@ -26,7 +26,7 @@ async function run(): Promise<void> {
 
     core.debug(`Fetching ${inputs.limit} recent issues from ${inputs.repo}...`)
     const issues = await getRecentIssues(inputs.token, inputs.repo, inputs.limit)
-    
+
     if (issues.length === 0) {
       core.info('No issues found')
       core.setOutput('summary', '')
@@ -34,11 +34,11 @@ async function run(): Promise<void> {
     }
 
     core.info(`Found ${issues.length} issues. Generating summaries...`)
-    
+
     // Process issues in parallel with a concurrency limit
     const concurrencyLimit = 3
     const summaries: IssueSummary[] = []
-    
+
     // Process issues in batches to respect concurrency limit
     for (let i = 0; i < issues.length; i += concurrencyLimit) {
       const batch = issues.slice(i, i + concurrencyLimit)
@@ -46,11 +46,11 @@ async function run(): Promise<void> {
         core.debug(`Summarizing issue #${issue.number}: ${issue.title}`)
         return summarizeIssue(issue, inputs.token, inputs.model)
       })
-      
+
       const batchResults = await Promise.all(batchPromises)
       summaries.push(...batchResults)
     }
-    
+
     // Format the summaries based on the requested output format
     let output: string
     if (inputs.outputFormat === 'json') {
@@ -58,12 +58,12 @@ async function run(): Promise<void> {
     } else {
       output = formatAsMarkdown(summaries)
     }
-    
+
     // Write the content to a file and get the file path
     const outputFilePath = writeToFile(output, inputs.outputFormat)
-    
+
     core.info('Issue summaries generated successfully')
-    
+
     // Set both the content and the file path as outputs
     core.setOutput('summary-content', output)
     core.setOutput('summary', outputFilePath)
