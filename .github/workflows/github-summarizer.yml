@@ -187,18 +187,18 @@ jobs:
                   "content": $SANITIZED_PROMPT
               }
           ],
-          "model": "claude-3.5-sonnet"
+          "model": "gpt-4o"
           }
           EOF
 
           # Call the GitHub Copilot API
           # Changes:
-          # - Use curl -sSf so HTTP errors fail the step
+          # - Use curl -sS --fail-with-body so HTTP errors fail the step AND print the response body
           # - Fail early if the response is not valid JSON to avoid jq parse errors
-          RESPONSE="$(curl -sSf "https://api.githubcopilot.com/chat/completions" \
+          RESPONSE="$(curl -sS --fail-with-body "https://api.githubcopilot.com/chat/completions" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -d @model_input.json)" || { echo "Curl failed (non-2xx response or network error)."; exit 1; }
+            -d @model_input.json)" || { echo "Curl failed (non-2xx response or network error). Error response: ${RESPONSE:-<no response body>}"; exit 1; }
 
           SUMMARY="$RESPONSE"
 
