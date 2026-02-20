@@ -43,7 +43,8 @@ export async function summarizeIssue(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Copilot-Integration-Id': 'vscode-chat'
       },
       body: JSON.stringify({
         messages: [
