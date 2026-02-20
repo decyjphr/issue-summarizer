@@ -14,7 +14,6 @@ on:
 # Required permissions for the workflow
 permissions:
   issues: write   # For reading issue data and posting comments
-  models: read    # For accessing GitHub's AI models
   contents: read  # For repository access
 
 jobs:
@@ -185,7 +184,7 @@ jobs:
           # CUSTOMIZATION POINT: Model selection and parameters
           # =====================================================================
           # You can change the model or add parameters like temperature, max_tokens, etc.
-          # Available models include: openai/gpt-4o, openai/gpt-4-turbo, etc.
+          # Available models include: gpt-4o, gpt-4o-mini, etc.
           # =====================================================================
 
           cat > model_input.json << EOF
@@ -200,12 +199,12 @@ jobs:
                   "content": $SANITIZED_PROMPT
               }
           ],
-          "model": "openai/gpt-4o"
+          "model": "gpt-4o"
           }
           EOF
           
-          # Call the GitHub Models API
-          SUMMARY=$(curl -s "https://models.github.ai/inference/chat/completions" \
+          # Call the GitHub Copilot API
+          SUMMARY=$(curl -s "https://api.githubcopilot.com/chat/completions" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -d @model_input.json)
