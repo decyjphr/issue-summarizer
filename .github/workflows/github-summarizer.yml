@@ -198,7 +198,7 @@ jobs:
           RESPONSE="$(curl -sS --fail-with-body "https://api.githubcopilot.com/chat/completions" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Copilot-Integration-Id: vscode-chat" \
+            -H "Copilot-Integration-Id: github.com" \
             -d @model_input.json)" || { echo "Curl failed (non-2xx response or network error). Error response: ${RESPONSE:-<no response body>}"; exit 1; }
 
           SUMMARY="$RESPONSE"
