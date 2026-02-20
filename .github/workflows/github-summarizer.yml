@@ -187,7 +187,7 @@ jobs:
                   "content": $SANITIZED_PROMPT
               }
           ],
-          "model": "gpt-4o"
+          "model": "claude-3.5-sonnet"
           }
           EOF
 
