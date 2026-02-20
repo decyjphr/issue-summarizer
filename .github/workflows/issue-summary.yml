@@ -184,7 +184,7 @@ jobs:
           # CUSTOMIZATION POINT: Model selection and parameters
           # =====================================================================
           # You can change the model or add parameters like temperature, max_tokens, etc.
-          # Available models include: gpt-4.1, gpt-4o, gpt-4o-mini, etc.
+          # Available models include: claude-3.5-sonnet, gpt-4.1, gpt-4o, gpt-4o-mini, etc.
           # =====================================================================
 
           cat > model_input.json << EOF
@@ -199,7 +199,7 @@ jobs:
                   "content": $SANITIZED_PROMPT
               }
           ],
-          "model": "gpt-4.1"
+          "model": "claude-3.5-sonnet"
           }
           EOF
           
