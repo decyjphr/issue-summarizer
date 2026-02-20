@@ -4,7 +4,7 @@ import { GitHubIssue, IssueSummary } from './types'
 export async function summarizeIssue(
   issue: GitHubIssue, 
   token: string,
-  model: string = 'openai/gpt-4o'
+  model: string = 'gpt-4o'
 ): Promise<IssueSummary> {
   const systemPrompt = `
     You are a GitHub issue summarizer referred to as SYSTEM.
@@ -39,7 +39,7 @@ export async function summarizeIssue(
   `
   
   try {
-    const response = await fetch('https://models.github.ai/inference/chat/completions', {
+    const response = await fetch('https://api.githubcopilot.com/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export async function summarizeIssue(
     
     // Check if the response was successful
     if (!response.ok) {
-      throw new Error(`GitHub Models API responded with status: ${response.status}`)
+      throw new Error(`GitHub Copilot API responded with status: ${response.status}`)
     }
     
     // Parse the JSON response

@@ -15,9 +15,6 @@ on:
         options:
           - markdown
           - json
-permissions:
-  models: read
-
 jobs:
   summarize:
     runs-on: ubuntu-latest
@@ -25,7 +22,6 @@ jobs:
       issues: write
       contents: read
       id-token: write
-      models: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3

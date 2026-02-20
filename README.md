@@ -1,21 +1,21 @@
 # Issue Summarizer GitHub Action
 
-This GitHub Action summarizes the 10 most recently updated issues in a repository using GitHub Models API. The summaries include key information such as title, owner/assignee, status, description, a concise summary, and pending items.
+This GitHub Action summarizes the 10 most recently updated issues in a repository using the [GitHub Copilot API](https://api.githubcopilot.com). The summaries include key information such as title, owner/assignee, status, description, a concise summary, and pending items.
 
 ## Required Permissions
 
 The GitHub token requires the following permissions:
 - `issues: read` - To access issue content
-- `id-token: write` - To authenticate with the GitHub Models API
+- `id-token: write` - To authenticate with the GitHub Copilot API
 
 ## Inputs
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
-| `token` | GitHub token with repository read access and models permission | Yes | `${{ github.token }}` |
+| `token` | GitHub token with repository read access and Copilot permission | Yes | `${{ github.token }}` |
 | `repo` | Repository name in the format "owner/repo" | No | Current repository |
 | `limit` | Number of recent issues to summarize | No | `10` |
-| `model` | GitHub Model to use for summarization | No | `openai/gpt-4o` |
+| `model` | GitHub Copilot model to use for summarization | No | `gpt-4o` |
 | `output-format` | Format of the output summary (`markdown` or `json`) | No | `markdown` |
 
 ## Outputs
@@ -41,7 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: read
-      models: write
     steps:
       - name: Summarize Recent Issues
         id: summarize
@@ -72,14 +71,13 @@ on:
       model:
         description: 'Model to use for summarization'
         required: false
-        default: 'openai/gpt-4o'
+        default: 'gpt-4o'
 
 jobs:
   summarize:
     runs-on: ubuntu-latest
     permissions:
       issues: read
-      models: write
     steps:
       - name: Generate Issue Summary
         id: summary
@@ -97,6 +95,25 @@ jobs:
           name: issue-summary
           path: ${{ steps.summary.outputs.summary }}
 ```
+
+## Local Testing with Nektos Act
+
+You can test this Action locally using [Nektos Act](https://github.com/nektos/act), which simulates GitHub Actions workflows on your machine.
+
+### Prerequisites
+
+1. Install Act by following the [installation instructions](https://nektosact.com/installation/index.html).
+2. Have a GitHub personal access token (PAT) with `repo` scope available.
+
+### Running locally
+
+```bash
+# Run the demo workflow locally
+act workflow_dispatch -W .github/workflows/demo.yml \
+  --secret GITHUB_TOKEN=<your-github-pat>
+```
+
+Use the `.actrc` file in the repository root for default Act configuration (platform, secrets file, etc.).
 
 ## License
 

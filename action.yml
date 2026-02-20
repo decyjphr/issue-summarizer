@@ -1,10 +1,10 @@
 name: 'Issue Summarizer'
-description: 'Summarizes recent issues in a GitHub repository using GitHub Models API (GPT-4o)'
+description: 'Summarizes recent issues in a GitHub repository using GitHub Copilot API (GPT-4o)'
 author: 'ActionsDesk'
 inputs:
   token:
     required: true
-    description: 'GitHub token with repository read access and models permission'
+    description: 'GitHub token with repository read access and Copilot permission'
     default: ${{ github.token }}
   repo:
     required: false
@@ -16,8 +16,8 @@ inputs:
     default: '10'
   model:
     required: false
-    description: 'GitHub Model to use for summarization'
-    default: 'openai/gpt-4o'
+    description: 'GitHub Copilot model to use for summarization'
+    default: 'gpt-4o'
   output-format:
     required: false
     description: 'Format of the output summary (markdown or json)'

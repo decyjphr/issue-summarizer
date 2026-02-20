@@ -2,7 +2,8 @@ import * as process from 'process'
 import * as cp from 'child_process'
 import * as path from 'path'
 import { formatAsMarkdown, formatAsJSON } from '../src/formatter'
-import { IssueSummary } from '../src/types'
+import { IssueSummary, GitHubIssue } from '../src/types'
+import { summarizeIssue } from '../src/github-models'
 
 // Mock issue summary data for testing
 const mockIssueSummaries: IssueSummary[] = [
@@ -57,6 +58,38 @@ test('formatAsJSON generates valid JSON', () => {
   expect(parsed.issues).toHaveLength(2)
   expect(parsed.issues[0].title).toBe('Test Issue 1')
   expect(parsed.issues[1].number).toBe(2)
+})
+
+test('summarizeIssue uses GitHub Copilot API endpoint', async () => {
+  const mockIssue: GitHubIssue = {
+    number: 42,
+    title: 'Test Issue',
+    body: 'Test body',
+    state: 'open',
+    html_url: 'https://github.com/test/repo/issues/42',
+    user: { login: 'testuser' },
+    assignees: [],
+    labels: [],
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  }
+
+  const fetchedUrls: string[] = []
+  global.fetch = jest.fn().mockImplementation((url: string) => {
+    fetchedUrls.push(url)
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({
+        choices: [{ message: { content: JSON.stringify({ summary: 'Test', pendingItems: [] }) } }]
+      })
+    })
+  }) as jest.Mock
+
+  await summarizeIssue(mockIssue, 'test-token', 'gpt-4o')
+
+  expect(fetchedUrls[0]).toBe('https://api.githubcopilot.com/chat/completions')
+
+  jest.restoreAllMocks()
 })
 
 // Shows how the runner will run a javascript action with env / stdout protocol
